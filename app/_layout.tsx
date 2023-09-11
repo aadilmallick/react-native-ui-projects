@@ -1,27 +1,55 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { SplashScreen, Stack } from 'expo-router';
-import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import {
+  DarkTheme,
+  DefaultTheme,
+  Theme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import { SplashScreen, Stack, useRouter } from "expo-router";
+import { useEffect } from "react";
+import {
+  useFonts,
+  Lato_300Light,
+  Lato_400Regular,
+  Lato_700Bold,
+} from "@expo-google-fonts/lato";
+import { Drawer } from "expo-router/drawer";
+import {
+  DarkModeProvider,
+  useDarkModeContext,
+} from "../context/DarkModeContext";
+import { Slot } from "expo-router/src/exports";
+import {
+  ThemeProvider as RNEThemeProvider,
+  createTheme,
+  useTheme,
+  useThemeMode,
+} from "@rneui/themed";
+const theme = createTheme({
+  lightColors: {
+    primary: "#e7e7e8",
+    secondary: "green",
+    background: "lightblue",
+  },
+  darkColors: {
+    primary: "#000",
+  },
+  mode: "light",
+});
 
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
+} from "expo-router";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
+    "lato-300": Lato_300Light,
+    "lato-400": Lato_400Regular,
+    "lato-700": Lato_700Bold,
   });
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
@@ -39,18 +67,40 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <RNEThemeProvider theme={theme}>
+      <DarkModeProvider withRNEUI={true}>
+        <RootLayoutNav />
+      </DarkModeProvider>
+    </RNEThemeProvider>
+  );
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const { isDarkMode } = useDarkModeContext();
+  const { theme } = useTheme();
+
+  const CustomLightTheme: Theme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      ...theme.colors,
+    },
+    dark: false,
+  };
+
+  const CustomDarkTheme: Theme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      ...theme.colors,
+    },
+    dark: true,
+  };
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+    <ThemeProvider value={isDarkMode ? CustomDarkTheme : CustomLightTheme}>
+      <Slot />
     </ThemeProvider>
   );
 }
